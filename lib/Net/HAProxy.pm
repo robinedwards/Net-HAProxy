@@ -14,6 +14,25 @@ subtype 'ReadWritableSocket',
 has socket => (is => 'ro', isa => 'ReadWritableSocket', required => 1);
 has timeout => (is => 'ro', isa => 'Int', default => 1);
 
+=head1 NAME Net::HAProxy - control HAProxy through a socket
+
+=head1 SYNOPSIS
+
+    my $haproxy = Net::HAProxy->new(
+        socket => '/var/run/haproxy-services.sock'
+    );
+
+    print Dumper $haproxy->stats;
+    print Dumper $haproxy->info;
+
+    $haproxy->enable_server('your_proxy', 'your_server);
+    $haproxy->disable_server('your_proxy', 'your_server');
+
+    $haproxy->set_weight('your_proxy', 'your_server', 50);
+
+=cut
+
+
 sub _send_command {
     my ($self, $cmd) = @_;
 
