@@ -102,18 +102,29 @@ sub info {
 
 Arguments: proxy name, server name, integer (0-100)
 
+Dies on invalid proxy / server name / weighting
+
 =cut
 
 
 sub set_weight {
     my ($self, $pxname, $svname, $weight) = @_;
-    return $self->_send_command("enable server $pxname/$svname $weight\%");
+
+    die "Invalid weight must be between  0 and 100"
+        unless $weight > 0 and $weight <= 100;
+
+    my $response = $self->_send_command("enable server $pxname/$svname $weight\%");
+    chomp $response;
+    die $response if length $response;
+    return 1;
 }
 
 
 =head2 enable_server
 
 Arguments: proxy name, server name
+
+Dies on invalid proxy / server name.
 
 =cut
 
@@ -128,6 +139,8 @@ sub enable_server {
 =head2 disable_server
 
 Arguments: proxy name, server name
+
+Dies on invalid proxy / server name.
 
 =cut
 
