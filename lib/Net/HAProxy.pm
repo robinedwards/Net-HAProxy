@@ -1,7 +1,6 @@
 package Net::HAProxy;
 use Moose;
 use Moose::Util::TypeConstraints;
-use Fcntl 'S_ISSOCK';
 use IO::Socket::UNIX;
 use IO::Scalar;
 use Text::CSV;
@@ -9,9 +8,7 @@ use namespace::autoclean;
 
 subtype 'ReadWritableSocket',
     as 'Str',
-    where {
-        -w $_ && -r $_ && S_ISSOCK((stat($_))[2]) # check mode
-    },
+    where { -w $_ && -r $_ && -S $_ },
     message { "'$_' is not a read/writable socket." };
 
 has socket => (is => 'ro', isa => 'ReadWritableSocket', required => 1);
