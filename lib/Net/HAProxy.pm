@@ -14,7 +14,7 @@ subtype 'ReadWritableSocket',
 has socket => (is => 'ro', isa => 'ReadWritableSocket', required => 1);
 has timeout => (is => 'ro', isa => 'Int', default => 1);
 
-=head1 NAME Net::HAProxy - control HAProxy through a socket
+# ABSTRACT: control HAProxy through a socket
 
 =head1 SYNOPSIS
 
@@ -51,6 +51,8 @@ sub _send_command {
 
     return $data;
 }
+
+=head1 METHODS
 
 =head2 stats
 
