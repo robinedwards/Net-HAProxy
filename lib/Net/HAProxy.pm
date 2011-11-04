@@ -5,7 +5,6 @@ use Fcntl 'S_ISSOCK';
 use IO::Socket::UNIX;
 use IO::Scalar;
 use Text::CSV;
-use Data::Dumper;
 use namespace::autoclean;
 
 subtype 'ReadWritableSocket',
@@ -32,8 +31,7 @@ sub _send_command {
     my $data = (<$sock>);
     $sock->close;
 
-    chomp $data;
-    return IO::Scalar->new(\$data);
+    return $data;
 }
 
 =head2 stats
@@ -62,16 +60,18 @@ sub stats {
 
     # http://haproxy.1wt.eu/download/1.3/doc/configuration.txt
     # see section 9
-    my $resp = $self->_send_command("show stat $iid $type $sid");
+    my $data = $self->_send_command("show stat $iid $type $sid");
 
-    my $fields = $resp->getline;
+    my $sh = IO::Scalar->new(\$data);
+
+    my $fields = $sh->getline;
     $fields =~ s/^\# //;
 
     my $csv = Text::CSV->new;
     $csv->parse($fields);
     $csv->column_names(grep { length } $csv->fields);
 
-    my $res = $csv->getline_hr_all($resp); pop @$res;
+    my $res = $csv->getline_hr_all($sh); pop @$res;
     return $res;
 }
 
@@ -84,19 +84,32 @@ returns a hash
 
 sub info {
     my ($self) = @_;
-    my $resp = $self->_send_command("show info");
+    my $data = $self->_send_command("show info");
 
     my $info = {};
 
-    while (<$resp>) {
-        chomp $_;
-        next unless length $_;
-        my ($key, $value) = split /:\s+/, $_;
+    for my $line (split /\n/, $data) {
+        chomp $line;
+        next unless length $line;
+        my ($key, $value) = split /:\s+/, $line;
         $info->{$key} = $value;
     }
 
     return $info;
 }
+
+=head2 set_weight
+
+Arguments: proxy name, server name, integer (0-100)
+
+=cut
+
+
+sub set_weight {
+    my ($self, $pxname, $svname, $weight) = @_;
+    return $self->_send_command("enable server $pxname/$svname $weight\%");
+}
+
 
 =head2 enable_server
 
@@ -106,9 +119,10 @@ Arguments: proxy name, server name
 
 sub enable_server {
     my ($self, $pxname, $svname) = @_;
-    my $resp = $self->_send_command("enable server $pxname/$svname");
-    my $d = <$resp>;
-    return $d;
+    my $response = $self->_send_command("enable server $pxname/$svname");
+    chomp $response;
+    die $response if length $response;
+    return 1;
 }
 
 =head2 disable_server
@@ -119,26 +133,36 @@ Arguments: proxy name, server name
 
 sub disable_server {
     my ($self, $pxname, $svname) = @_;
-    my $resp = $self->_send_command("disable server $pxname/$svname");
+    my $response = $self->_send_command("disable server $pxname/$svname");
+    chomp $response;
+    die $response if length $response;
+    return 1;
 }
 
 # TODO: errors and sessions need handling properly.
 
+=head2 errors
+
+list errors (TODO response not parsed)
+
+=cut
+
 sub errors {
     my ($self) = @_;
-    my $resp = $self->_send_command("show errors");
-    my $errors = <$resp>;
-    chomp $errors;
-    return $errors
+    return $self->_send_command("show errors");
 }
+
+=head2 sessions
+
+show sessions (TODO response not parsed)
+
+=cut
 
 sub sessions {
     my ($self) = @_;
-    my $resp = $self->_send_command("show sess");
-    my $sessions = <$resp>;
-    chomp $sessions;
-    return $sessions
+    return  $self->_send_command("show sess");
 }
 
 __PACKAGE__->meta->make_immutable;
+
 1;
