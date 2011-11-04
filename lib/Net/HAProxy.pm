@@ -18,6 +18,8 @@ has timeout => (is => 'ro', isa => 'Int', default => 1);
 
 =head1 SYNOPSIS
 
+    use Net::HAProxy;
+
     my $haproxy = Net::HAProxy->new(
         socket => '/var/run/haproxy-services.sock'
     );
@@ -25,7 +27,7 @@ has timeout => (is => 'ro', isa => 'Int', default => 1);
     print Dumper $haproxy->stats;
     print Dumper $haproxy->info;
 
-    $haproxy->enable_server('your_proxy', 'your_server);
+    $haproxy->enable_server('your_proxy', 'your_server');
     $haproxy->disable_server('your_proxy', 'your_server');
 
     $haproxy->set_weight('your_proxy', 'your_server', 50);
