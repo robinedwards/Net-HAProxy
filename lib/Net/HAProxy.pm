@@ -18,22 +18,42 @@ has timeout => (is => 'ro', isa => 'Int', default => 1);
 
 =head1 SYNOPSIS
 
+    use Try::Tiny;
     use Net::HAProxy;
 
     my $haproxy = Net::HAProxy->new(
-        socket => '/var/run/haproxy-services.sock'
+        socket => '/var/run/haproxy-services.sock',
+        timeout => 1 # default
     );
 
+    # dump statistics
     print Dumper $haproxy->stats;
+
+    # specify which statistics to list
+    print $haproxy->stats({ iid => 2, sid => 1, type => -1});
+
+    # info about haproxy status
     print Dumper $haproxy->info;
 
-    $haproxy->enable_server('your_proxy', 'your_server');
-    $haproxy->disable_server('your_proxy', 'your_server');
+    try {
+        $haproxy->enable_server('pxname', 'svname');
+    } catch {
+        print "Couldn't enable server: $_\n";
+    };
 
-    $haproxy->set_weight('your_proxy', 'your_server', 50);
+    try {
+        $haproxy->disable_server('pxname', 'svname');
+    } catch {
+        print "Couldn't disable server: $_\n";
+    };
+
+    try {
+        $haproxy->set_weight('pxname', 'svname', 50);
+    } catch {
+        print "Couldn't set weighting: $_\n";
+    };
 
 =cut
-
 
 sub _send_command {
     my ($self, $cmd) = @_;
