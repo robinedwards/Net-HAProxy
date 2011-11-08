@@ -166,14 +166,12 @@ If your using an earlier version of HAProxy this should still work, please check
 =cut
 
 sub stats {
-    my ($self, %args) = @_;
+    my ($self, $args) = @_;
 
-    my $iid = $args{proxy_id} || '-1';
-    my $type = $args{type} || '-1';
-    my $sid = $args{server_id} || '-1';
+    my $iid = $args->{iid}  || '-1';
+    my $type = $args->{type}     || '-1';
+    my $sid = $args->{sid} || '-1';
 
-    # http://haproxy.1wt.eu/download/1.3/doc/configuration.txt
-    # see section 9
     my $data = $self->_send_command("show stat $iid $type $sid");
 
     my $sh = IO::Scalar->new(\$data);
@@ -214,9 +212,9 @@ sub info {
 
 =head2 set_weight
 
-Arguments: proxy name, server name, integer (0-100)
+Arguments: proxy name (pxname), service name (svname), integer (0-100)
 
-Dies on invalid proxy / server name / weighting
+Dies on invalid proxy / service name / weighting
 
 =cut
 
@@ -224,21 +222,20 @@ Dies on invalid proxy / server name / weighting
 sub set_weight {
     my ($self, $pxname, $svname, $weight) = @_;
 
-    die "Invalid weight must be between  0 and 100"
+    die "Invalid weight must be between 0 and 100"
         unless $weight > 0 and $weight <= 100;
 
     my $response = $self->_send_command("enable server $pxname/$svname $weight\%");
     chomp $response;
     die $response if length $response;
-    return 1;
 }
 
 
 =head2 enable_server
 
-Arguments: proxy name, server name
+Arguments: proxy name (pxname), service name (svname)
 
-Dies on invalid proxy / server name.
+Dies on invalid proxy / service name.
 
 =cut
 
@@ -247,14 +244,13 @@ sub enable_server {
     my $response = $self->_send_command("enable server $pxname/$svname");
     chomp $response;
     die $response if length $response;
-    return 1;
 }
 
 =head2 disable_server
 
-Arguments: proxy name, server name
+Arguments: proxy name (pxname), service name (svname)
 
-Dies on invalid proxy / server name.
+Dies on invalid proxy / service name.
 
 =cut
 
@@ -263,14 +259,12 @@ sub disable_server {
     my $response = $self->_send_command("disable server $pxname/$svname");
     chomp $response;
     die $response if length $response;
-    return 1;
 }
 
-# TODO: errors and sessions need handling properly.
 
-=head2 errors
+=head2 errors (EXPERIMENTAL)
 
-list errors (TODO response not parsed)
+list errors, currently returns raw response
 
 =cut
 
@@ -279,9 +273,9 @@ sub errors {
     return $self->_send_command("show errors");
 }
 
-=head2 sessions
+=head2 sessions (EXPERIMENTAL)
 
-show sessions (TODO response not parsed)
+show current sessions currently returns raw response
 
 =cut
 
